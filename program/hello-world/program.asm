@@ -24,7 +24,7 @@ _MBR_RM_Main:
 	MOV	ES, AX
 	MOV	SP, 0x7C00
 	
-	MOV	[_MBR_RM_Data.driveNumber], DL
+	MOV	[_MBR_Data.driveNumber], DL
 	
 	STI
 	
@@ -37,7 +37,7 @@ _MBR_RM_Main:
 	INT	0x10
 	
 	PUSH	0x000F
-	PUSH	_MBR_RM_Data.message
+	PUSH	_MBR_Data.message
 	CALL	_MBR_RM_PrintString
 	ADD	SP, 4
 	
@@ -78,9 +78,9 @@ _MBR_RM_PrintString:
 	RET
 
 ;****************************************************************************************************
-; Real Mode Data
+; Data
 ;****************************************************************************************************
-_MBR_RM_Data:
+_MBR_Data:
 .driveNumber:
 	DB	0x00
 .message:
