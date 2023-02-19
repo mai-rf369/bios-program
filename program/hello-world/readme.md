@@ -4,7 +4,7 @@
 > nasm -fbin -o program.img program.asm
 ```
 
-### Run
+### Run (QEMU)
 ```
 > qemu-system-x86_64 program.img
 ```
