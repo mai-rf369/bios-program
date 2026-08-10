@@ -1,0 +1,7 @@
+[BITS 32]
+[EXTERN main]
+
+GLOBAL	_START
+_START:
+	CALL	main
+	JMP	$
