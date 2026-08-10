@@ -22,7 +22,7 @@ _MBR_RM_Main:
 	MOV	DS, AX		; Data Segment = 0
 	MOV	ES, AX		; Extra Segment = 0
 	MOV	SS, AX		; Stack Segment = 0
-	MOV	SP, 0x7C00	; Set Stack Pointer to before MBR Start Address (0x7C00)
+	MOV	SP, 0x7C00	; Set Stack Pointer just below MBR Start Address (0x7C00)
 	
 	; Save Boot Drive Number
 	MOV	[_MBR_Data.bootDrive], DL
@@ -47,7 +47,7 @@ _MBR_RM_Main:
 	
 	; Prepare Protect Mode
 	CLI							; Disable Interrupts
-	LGDT	[_MBR_Data.globalDescriptorTable_descriptor]	; Register GDT to CPU
+	LGDT	[GDT.descriptor]	; Register GDT to CPU
 	
 	; Enable Protect Mode
 	MOV	EAX, CR0	; Copy Control Register 0 to EAX
@@ -71,7 +71,7 @@ _MBR_PM:
 ; Main Routine (_MBR_PM_Initialize)
 ;----------------------------------------------------------------------------------------------------
 _MBR_PM_Initialize:
-	; Set 32bit Segment Register to Data Segment defined by GDT
+	; Set 32bit Segment Registers to Data Segment defined by GDT
 	MOV	AX, DATA_SEGMENT	; Data Segment defined by GDT
 	MOV	DS, AX			; Data Segment
 	MOV	SS, AX			; Stack Segment
@@ -79,15 +79,15 @@ _MBR_PM_Initialize:
 	MOV	FS, AX
 	MOV	GS, AX
 	
-	; Set Large Stack for 32 bit
-	MOV	EBP, 0x90000	; 0x90000 is Safe Free and Memory Area sufficiently far from Kernel Area (0x10000)
+	; Set up a large Stack for 32bit mode
+	MOV	EBP, 0x90000	; 0x90000 is a Safe Free Memory Area sufficiently far from Kernel Area (0x10000)
 	MOV	ESP, EBP
 	
 	; Jump to C Kernel
 	MOV	EAX, 0x10000	; Loaded Memory Address (0x10000)
-	CALL	EAX		; To Kernel main() Function
+	CALL	EAX		; Call Kernel main() Function
 	
-	; Fail Safe
+	; Fail Safe (If Kernel returns)
 .loop:
 	HLT
 	JMP	.loop
@@ -104,10 +104,10 @@ _MBR_Data:
 DAP:
 	DB	0x10	; Packet Size (16 Bytes = 0x10)
 	DB	0	; Reserved
-	DW	16	; Sectors to Load (16 Sectors = 8KB) depends on Kernel Size
+	DW	16	; Sectors to Load (16 Sectors = 8KB) *Increase this if Kernel Size grows
 	DW	0x0000	; Destination Buffer Offset
-	DW	0x1000	; Destination Buffer Segment (0x1000:0000 = 0x10000)
-	DQ	1	; LBA Read Start (LBA 1 = Sector next to MBR)
+	DW	0x1000	; Destination Buffer Segment (0x1000:0000 = Physical Address 0x10000)
+	DQ	1	; Read Start LBA (LBA 1 = Sector next to MBR)
 ;----------------------------------------------------------------------------------------------------
 ; Global Descriptor Table (GDT)
 ;----------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ GDT:
 	DW	0xFFFF		; Limit [0:15]
 	DW	0x0000		; Base Address [0:15]
 	DB	0x00		; Base Address [16:23]
-	DB	0b10010010	; Access Privilege (Present=1, Ring=00, System=1, Code/Data=0, Conforming=0, Readable=1, Accessed=0, Executable=0, Writable=1)
+	DB	0b10010010	; Access Privilege (Present=1, Ring=00, System=1, Code/Data=0, Expand-down=0, Writable=1, Accessed=0)
 	DB	0b11001111	; Flag (Granularity=1, 32bit=1) & Limit [16:19]
 	DB	0x00		; Base Address [24:31]
 .end:
@@ -139,14 +139,14 @@ GDT:
 	DD	.start			; GDT Start Address
 
 ; Segment Selector Constant (Byte Offset from GDT Head)
-CODE_SEGMENT	EQU	.code - .start
-DATA_SEGMENT	EQU	.data - .start
+CODE_SEGMENT	EQU	GDT.code - GDT.start
+DATA_SEGMENT	EQU	GDT.data - GDT.start
 ;****************************************************************************************************
-; Padding
+; Boot Sector Padding
 ;****************************************************************************************************
-	TIMES	0x01B8 - ($ - $$)	DB	0x00	; Padding 0 Until 440 Bytes (0x01B8)
+	TIMES	0x01B8 - ($ - $$)	DB	0x00	; Padding with 0 up to 440 Bytes (0x01B8)
 ;****************************************************************************************************
-; Pattition Table (PT)
+; Partition Table (PT)
 ;****************************************************************************************************
 _MBR_PT:
 ; Disk Serial Number
@@ -197,6 +197,6 @@ _MBR_PT:
 	DB	0x00		; End Cylinder
 	DD	0x00000000	; First Sector
 	DD	0x00000000	; Total Sectors
-; Signature
+; MBR Boot Signature
 	DB	0x55, 0xAA
 	
