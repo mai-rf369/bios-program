@@ -3,3 +3,4 @@
 - [Hello-World](./program/hello-world/)
 - [Hello-World-with-Repetition](./program/hello-world-with-repetition/)
 - [Hello-World-with-Color-Iteration](./program/hello-world-with-color-iteration/)
+- [Hello-World-in-32bit-Mode](./program/hello-world-in-32bit-mode/)
