@@ -107,7 +107,7 @@ void delay_ms(unsigned int ms)
 	unsigned int elapsed_ticks	=	0;
 	
 	unsigned short current_tick	=	read_pit();
-	unsigned short prev_tick	=	current_tick();
+	unsigned short prev_tick	=	current_tick;
 	
 	while (elapsed_ticks < target_ticks)
 	{
