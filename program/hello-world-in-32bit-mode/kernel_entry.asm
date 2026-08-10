@@ -1,7 +1,18 @@
-[BITS 32]
-[EXTERN main]
-
-GLOBAL	_START
+;####################################################################################################
+; BIOS-PROGRAM - Bouncing-Block-in-32bit-Mode (Kernel Entry)
+;####################################################################################################
+	BITS	32
+;====================================================================================================
+; External References & Global Declarations
+;====================================================================================================
+	EXTERN	main	; Reference to main() function defined in C Kernel
+	GLOBAL	_START	; Export _START label
+;====================================================================================================
+; Kernel Entry Point
+;====================================================================================================
 _START:
-	CALL	main
-	JMP	$
+	; Jump to C Kernel
+	CALL	main	; Call C Kernel's main() Function
+	
+	; Fail Safe
+	JMP	$	; Jump to Current Address
