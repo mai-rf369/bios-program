@@ -3,7 +3,7 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200
 #define TRAIL_LENGTH 10
-#define NUMBER_OF_DOTS 5
+#define NUMBER_OF_DOTS 4
 
 static inline unsigned char inb(unsigned short port);
 static inline void outb(unsigned short port, unsigned char data);
