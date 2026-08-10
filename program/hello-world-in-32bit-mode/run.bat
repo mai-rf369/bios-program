@@ -1,1 +1,1 @@
-qemu-system-i386 -drive format=raw,file=os.img
+qemu-system-i386 -drive format=raw,file=program.img
