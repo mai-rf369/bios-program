@@ -1,4 +1,4 @@
-all:image.img
+all: image.img
 bootloader.bin: bootloader.asm
 	nasm -f bin bootloader.asm -o bootloader.bin
 kernel_entry.o: kernel_entry.asm
@@ -9,5 +9,6 @@ kernel.bin: kernel_entry.o kernel.o linker.ld
 	ld -m elf_i386 -T linker.ld --nmagic kernel_entry.o kernel.o -o kernel.elf
 	objcopy -O binary kernel.elf kernel.bin
 image.img: bootloader.bin kernel.bin
-	cat bootloader.bin kernel.bin > image.img
-	dd if=/dev/zero bs=1024 count=1024 >> image.img
+	dd if=/dev/zero of=image.img bs=1k count=1024
+	dd if=bootloader.bin of=image.img conv=notrunc bs=512 count=1 seek=0
+	dd if=kernel.bin of=image.img conv=notrunc bs=512 seek=1
