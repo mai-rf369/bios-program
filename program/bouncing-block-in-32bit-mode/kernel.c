@@ -2,10 +2,10 @@
 #define VRAM 0xA0000
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200
+#define TRAIL_LENGTH 10
 
 static inline unsigned char inb(unsigned short port);
 static inline void outb(unsigned short port, unsigned char data);
-void wait_vsync(void);
 void delay_ms(unsigned int ms);
 
 void main(void)
@@ -24,13 +24,41 @@ void main(void)
 	int dx	=	1;
 	int dy	=	1;
 	
-	unsigned char dot_color	=	15;	// White
-	unsigned char bg_color	=	0;	// Black
+	// Initialize Trail History
+	int trail_x[TRAIL_LENGTH];
+	int trail_y[TRAIL_LENGTH];
+	for (int i = 0; i < TRAIL_LENGTH; i++)
+	{
+		trail_x[i]	=	x;
+		trail_y[i]	=	y;
+	}
+	
+	// Define Colors for Trail
+	// 0: Black, 8: Dark Gray, 7: Light Gray, 14: Yellow, 15: White
+	unsigned char trail_colors[TRAIL_LENGTH]	=	{
+		15,
+		15,
+		14,
+		14,
+		7,
+		7,
+		8,
+		8,
+		8,
+		0
+	};
 	
 	while (1)
 	{
-		// Clear Current Dot
-		vram[y * SCREEN_WIDTH + x]	=	bg_color;
+		// Erase oldest trail dot
+		vram[trail_y[TRAIL_LENGTH - 1] * SCREEN_WIDTH + trail_x[TRAIL_LENGTH - 1]]	=	0;
+		
+		// Shift Position
+		for (int i = TRAIL_LENGTH - 1; i > 0; i--)
+		{
+			trail_x[i]	=	trail_x[i - 1];
+			trail_y[i]	=	trail_y[i - 1];
+		}
 		
 		// Update Position
 		x	=	x + dx;
@@ -46,8 +74,15 @@ void main(void)
 			dy	=	-dy;
 		}
 		
-		// Draw Dot
-		vram[y * SCREEN_WIDTH + x]	=	dot_color;
+		// Save new Head Position
+		trail_x[0]	=	x;
+		trail_y[0]	=	y;
+		
+		// Draw Entire Trail
+		for (int i = 0; i < TRAIL_LENGTH; i++)
+		{
+			vram[trail_y[i] * SCREEN_WIDTH + trail_x[i]]	=	trail_colors[i];
+		}
 		
 		// Weight for Speed Adjustment
 		delay_ms(16);
@@ -68,21 +103,6 @@ static inline unsigned char inb(unsigned short port)
 static inline void outb(unsigned short port, unsigned char data)
 {
 	__asm__ volatile ("outb %0, %1" : : "a"(data), "Nd"(port));
-}
-
-// Wait VSYNC
-void wait_vsync(void)
-{
-	// VGA Input Status Register 1 Port: 0x03DA
-	// If Bit 3 is 1, VSYNC Interval
-	
-	// Wait VSYNC End If Already VSYNC
-	while (inb(0x03DA) & 0x08)
-	{}
-	
-	// Wait VSYNC Start
-	while (!(inb(0x03DA) & 0x08))
-	{}
 }
 
 // Read Current PIT Channel 0 Count
