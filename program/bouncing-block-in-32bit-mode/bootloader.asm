@@ -59,8 +59,50 @@ _MBR_RM_Main:
 	
 	; Fail Safe for Disk Error
 .diskError:
+	PUSH	0x000F
+	PUSH	_MBR_Data.errorMessage
+	CALL	_MBR_RM_PrintString
+	ADD	SP, 4
+.diskErrorLoop:
 	HLT
-	JMP	.diskError
+	JMP	.diskErrorLoop
+;----------------------------------------------------------------------------------------------------
+; Sub Routine (_MBR_RM_PrintString)
+; void PrintString(const char* string, uint16_t color)
+;----------------------------------------------------------------------------------------------------
+_MBR_RM_PrintString:
+	; Save Registers and Set up Stack Frame
+	PUSH	BP
+	PUSH	BX
+	PUSH	SI
+	MOV	BP, SP	; Set Base Pointer to Current Stack Pointer
+	
+	; Retrieve Arguments from Stack
+	; Stack Layout: [BP]=SI, [BP+2]=BX, [BP+4]=BP, [BP+6]=Return IP, [BP+8]=Argument 1 (String), [BP+10]=Argument 2 (Color)
+	MOV	SI, [BP + 8]	; SI = Pointer to String
+	MOV	BL, [BP + 10]	; BL = Text Color (Used by BIOS INT 0x10 in Graphic Mode)
+	
+.loop:
+	MOV	AL, [SI]	; Load next Character into AL
+	
+	CMP	AL, 0x00	; Check if Character is NULL Terminator ('\0')
+	JE	.end		; If NULL, Jump to .end
+	
+	; Print Character using BIOS Teletype Output
+	MOV	AH, 0x0E	; BIOS Teletype Output Function
+	MOV	BH, 0x00	; Page Number
+	INT	0x10		; BIOS Video Interrupt (Prints AL with color BL)
+	
+	INC	SI		; Move to next Character
+	JMP	.loop		; Repeat until NULL Terminator
+
+.end:
+	; Restore Registers and Return
+	MOV	SP, BP		; Restore Stack Pointer
+	POP	SI
+	POP	BX
+	POP	BP
+	RET			; Return to Caller
 
 	BITS	32
 ;****************************************************************************************************
@@ -98,6 +140,9 @@ _MBR_PM_Initialize:
 _MBR_Data:
 .bootDrive:
 	DB	0x00	; Boot Drive Number
+.errorMessage:
+	DB	"Disk Error", 0x0D, 0x0A
+	DB	0x00
 ;----------------------------------------------------------------------------------------------------
 ; Disk Address Packet (DAP)
 ;----------------------------------------------------------------------------------------------------
