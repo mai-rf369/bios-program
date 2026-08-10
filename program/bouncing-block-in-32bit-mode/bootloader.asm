@@ -141,8 +141,10 @@ _MBR_Data:
 .bootDrive:
 	DB	0x00	; Boot Drive Number
 .errorMessage:
-	DB	"Disk Error", 0x0D, 0x0A
-	DB	0x00
+	DB	"Disk Error"
+	DB	0x0D		; CR (Carriage Return)
+	DB	0x0A		; LF (Line Feed)
+	DB	0x00		; NULL Terminator
 ;----------------------------------------------------------------------------------------------------
 ; Disk Address Packet (DAP)
 ;----------------------------------------------------------------------------------------------------
