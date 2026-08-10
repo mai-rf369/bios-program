@@ -90,7 +90,6 @@ void main(void)
 	unsigned char green_trail[TRAIL_LENGTH]	=	{10, 10, 2, 2, 8, 8, 8, 8, 8, 0};
 	unsigned char red_trail[TRAIL_LENGTH]	=	{12, 12, 4, 4, 8, 8, 8, 8, 8, 0};
 	
-	
 	Dot dots[NUMBER_OF_DOTS];
 	dot_initialize(&dots[0], 160, 100, 1, 1, white_trail);
 	dot_initialize(&dots[1], 100, 50, -1, 2, cyan_trail);
