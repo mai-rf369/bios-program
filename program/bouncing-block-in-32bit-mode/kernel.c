@@ -3,10 +3,76 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200
 #define TRAIL_LENGTH 10
+#define NUMBER_OF_DOTS 5
 
 static inline unsigned char inb(unsigned short port);
 static inline void outb(unsigned short port, unsigned char data);
 void delay_ms(unsigned int ms);
+
+typedef struct {
+	int x;
+	int y;
+	int dx;
+	int dy;
+	int trail_x[TRAIL_LENGTH];
+	int trail_y[TRAIL_LENGTH];
+	unsigned char colors[TRAIL_LENGTH];
+} Dot;
+
+void dot_initialize(Dot *dot, int x, int y, int dx, int dy, const unsigned char colors[TRAIL_LENGTH])
+{
+	dot->x	=	x;
+	dot->y	=	y;
+	dot->dx	=	dx;
+	dot->dy	=	dy;
+	for (int i = 0; i < TRAIL_LENGTH; i++)
+	{
+		dot->trail_x[i]	=	x;
+		dot->trail_y[i]	=	y;
+		dot->colors[i]	=	colors[i];
+	}
+}
+
+void dot_update(Dot *dot)
+{
+	// Shift Position
+	for (int i = TRAIL_LENGTH - 1; i > 0; i--)
+	{
+		dot->trail_x[i]	=	dot->trail_x[i - 1];
+		dot->trail_y[i]	=	dot->trail_y[i - 1];
+	}
+	
+	// Update Position
+	dot->x	=	dot->x + dot->dx;
+	dot->y	=	dot->y + dot->dy;
+	
+	// Bounce
+	if (dot->x <= 0 || dot->x >= SCREEN_WIDTH - 1)
+	{
+		dot->dx	=	-dot->dx;
+	}
+	if (dot->y <= 0 || dot->y >= SCREEN_HEIGHT - 1)
+	{
+		dot->dy	=	-dot->dy;
+	}
+	
+	// Save new Head Position
+	dot->trail_x[0]	=	dot->x;
+	dot->trail_y[0]	=	dot->y;
+}
+
+// Draw Dot
+void dot_draw(Dot *dot, unsigned char *vram)
+{
+	// Erase oldest Trail Dot
+	vram[dot->trail_y[TRAIL_LENGTH - 1] * SCREEN_WIDTH + dot->trail_x[TRAIL_LENGTH - 1]]	=	0;
+	
+	// Draw entire Trail
+	for (int i = 0; i < TRAIL_LENGTH; i++)
+	{
+		vram[dot->trail_y[i] * SCREEN_WIDTH + dot->trail_x[i]]	=	dot->colors[i];
+	}
+}
 
 void main(void)
 {
@@ -18,73 +84,27 @@ void main(void)
 		vram[i]	=	0;
 	}
 	
-	// Initialize Dot State
-	int x	=	160;
-	int y	=	100;
-	int dx	=	1;
-	int dy	=	1;
+	// Define Color Presets for Trails
+	unsigned char white_trail[TRAIL_LENGTH]	=	{15, 15, 14, 14, 7, 7, 8, 8, 8, 0};
+	unsigned char cyan_trail[TRAIL_LENGTH]	=	{11, 11, 3, 3, 1, 1, 8, 8, 8, 0};
+	unsigned char green_trail[TRAIL_LENGTH]	=	{10, 10, 2, 2, 8, 8, 8, 8, 8, 0};
+	unsigned char red_trail[TRAIL_LENGTH]	=	{12, 12, 4, 4, 8, 8, 8, 8, 8, 0};
 	
-	// Initialize Trail History
-	int trail_x[TRAIL_LENGTH];
-	int trail_y[TRAIL_LENGTH];
-	for (int i = 0; i < TRAIL_LENGTH; i++)
-	{
-		trail_x[i]	=	x;
-		trail_y[i]	=	y;
-	}
 	
-	// Define Colors for Trail
-	// 0: Black, 8: Dark Gray, 7: Light Gray, 14: Yellow, 15: White
-	unsigned char trail_colors[TRAIL_LENGTH]	=	{
-		15,
-		15,
-		14,
-		14,
-		7,
-		7,
-		8,
-		8,
-		8,
-		0
-	};
+	Dot dots[NUMBER_OF_DOTS];
+	dot_initialize(&dots[0], 160, 100, 1, 1, white_trail);
+	dot_initialize(&dots[1], 100, 50, -1, 2, cyan_trail);
+	dot_initialize(&dots[2], 200, 150, 2, -1, green_trail);
+	dot_initialize(&dots[3], 50, 120, -2, -2, red_trail);
 	
 	while (1)
 	{
-		// Erase oldest trail dot
-		vram[trail_y[TRAIL_LENGTH - 1] * SCREEN_WIDTH + trail_x[TRAIL_LENGTH - 1]]	=	0;
-		
-		// Shift Position
-		for (int i = TRAIL_LENGTH - 1; i > 0; i--)
+		for (int i = 0; i < NUMBER_OF_DOTS; i++)
 		{
-			trail_x[i]	=	trail_x[i - 1];
-			trail_y[i]	=	trail_y[i - 1];
+			dot_update(&dots[i]);
+			dot_draw(&dots[i], vram);
 		}
 		
-		// Update Position
-		x	=	x + dx;
-		y	=	y + dy;
-		
-		// Bounce
-		if (x <= 0 || x >= SCREEN_WIDTH - 1)
-		{
-			dx	=	-dx;
-		}
-		if (y <= 0 || y >= SCREEN_HEIGHT - 1)
-		{
-			dy	=	-dy;
-		}
-		
-		// Save new Head Position
-		trail_x[0]	=	x;
-		trail_y[0]	=	y;
-		
-		// Draw Entire Trail
-		for (int i = 0; i < TRAIL_LENGTH; i++)
-		{
-			vram[trail_y[i] * SCREEN_WIDTH + trail_x[i]]	=	trail_colors[i];
-		}
-		
-		// Weight for Speed Adjustment
 		delay_ms(16);
 	}
 }
