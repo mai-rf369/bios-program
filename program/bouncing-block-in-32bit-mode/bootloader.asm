@@ -8,7 +8,6 @@
 ; Master Boot Record
 ;====================================================================================================
 _MBR:
-; Bootstrap Code
 ;****************************************************************************************************
 ; Real Mode Program
 ;****************************************************************************************************
@@ -17,139 +16,153 @@ _MBR_RM:
 ; Main Routine (_MBR_RM_Main)
 ;----------------------------------------------------------------------------------------------------
 _MBR_RM_Main:
-	; Initialize Register
-	CLI
-	XOR	AX, AX
-	MOV	DS, AX
-	MOV	ES, AX
-	MOV	SS, AX
-	MOV	SP, 0x7C00
+	; Initialize Register and Stack
+	CLI			; Disable Interrupts
+	XOR	AX, AX		; AX = 0
+	MOV	DS, AX		; Data Segment = 0
+	MOV	ES, AX		; Extra Segment = 0
+	MOV	SS, AX		; Stack Segment = 0
+	MOV	SP, 0x7C00	; Set Stack Pointer to before MBR Start Address (0x7C00)
 	
-	; Save Boot Drive
+	; Save Boot Drive Number
 	MOV	[_MBR_Data.bootDrive], DL
-	STI
+	STI			; Enable Interrupts
 	
 	; Set Video Mode (VGA Graphic Mode: 320x200, 256 colors)
-	MOV	AH, 0x00
-	MOV	AL, 0x13
-	INT	0x10
+	MOV	AH, 0x00	; Video Mode Setting
+	MOV	AL, 0x13	; Mode Number
+	INT	0x10		; BIOS Video Mode Interrupt
 	
-	; Load Kernel
-	MOV	AH, 0x42
-	MOV	DL, [_MBR_Data.bootDrive]
-	MOV	SI, DAP
-	INT	0x13
-	JC	_MBR_RM_Main.diskError
+	; Load Kernel from Disk
+	MOV	AH, 0x42			; Disk Extended Read
+	MOV	DL, [_MBR_Data.bootDrive]	; Load Boot Drive Number
+	MOV	SI, DAP				; Load Disk Address Packet
+	INT	0x13				; BIOS Disk Service
+	JC	.diskError			; If Carry Flag = 1, Jump to Error Process
 	
 	; Enable A20 Line
-	IN	AL, 0x92
-	OR	AL, 2
-	OUT	0x92, AL
+	IN	AL, 0x92	; Read System Control Port A
+	OR	AL, 0x02	; Set A20 Enable Bit (bit 1)
+	OUT	0x92, AL	; Write back to Port
 	
-	; Load GDT
-	CLI
-	LGDT	[_MBR_Data.globalDescriptorTable_descriptor]
+	; Prepare Protect Mode
+	CLI							; Disable Interrupts
+	LGDT	[_MBR_Data.globalDescriptorTable_descriptor]	; Register GDT to CPU
 	
-	MOV	EAX, CR0
-	OR	EAX, 0x0001	; Enable Protect Mode Flag
-	MOV	CR0, EAX
+	; Enable Protect Mode
+	MOV	EAX, CR0	; Copy Control Register 0 to EAX
+	OR	EAX, 0x00000001	; Set Protection Enable Bit (bit 0)
+	MOV	CR0, EAX	; Write back to Control Register 0 (Transition to Protect Mode)
 	
-	; Flush Pipeline & Jump to 32bit Code
-	JMP	CODE_SEGMENT:_MBR_PM_Initialize
+	; Jump to 32 bit Code Segment
+	JMP	CODE_SEGMENT:_MBR_PM_Initialize	; Jump by Specifying Segment Selector and Offset
 	
+	; Fail Safe for Disk Error
 .diskError:
 	HLT
-	JMP	_MBR_RM_Main.diskError
+	JMP	.diskError
+
+	BITS	32
 ;****************************************************************************************************
-; Real Mode Program
+; Protect Mode Program (32-bit)
 ;****************************************************************************************************
 _MBR_PM:
 ;----------------------------------------------------------------------------------------------------
 ; Main Routine (_MBR_PM_Initialize)
 ;----------------------------------------------------------------------------------------------------
 _MBR_PM_Initialize:
-	; Initialize 32bit Segment Register
-	MOV	AX, DATA_SEGMENT
-	MOV	DS, AX
-	MOV	SS, AX
-	MOV	ES, AX
+	; Set 32bit Segment Register to Data Segment defined by GDT
+	MOV	AX, DATA_SEGMENT	; Data Segment defined by GDT
+	MOV	DS, AX			; Data Segment
+	MOV	SS, AX			; Stack Segment
+	MOV	ES, AX			; Extra Segment
 	MOV	FS, AX
 	MOV	GS, AX
 	
-	; Set Stack
-	MOV	EBP, 0x90000
+	; Set Large Stack for 32 bit
+	MOV	EBP, 0x90000	; 0x90000 is Safe Free and Memory Area sufficiently far from Kernel Area (0x10000)
 	MOV	ESP, EBP
 	
 	; Jump to C Kernel
-	; Call Loaded Memory (0x10000)
-	MOV	EAX, 0x10000
-	CALL	EAX
+	MOV	EAX, 0x10000	; Loaded Memory Address (0x10000)
+	CALL	EAX		; To Kernel main() Function
 	
+	; Fail Safe
 .loop:
 	HLT
 	JMP	.loop
-	
-;----------------------------------------------------------------------------------------------------
-; Error Routine (_MBR_RM_DiskError)
-;----------------------------------------------------------------------------------------------------
-_MBR_RM_DiskError:
-	
-	
-	
+
 ;****************************************************************************************************
 ; Data
 ;****************************************************************************************************
 _MBR_Data:
 .bootDrive:
-	DB	0x00
-.diskAddressPacket:
-	DB	0x10	; Packet Size (16 Bytes)
-	DB	0
-	DW	16	; Sectors to Load (16 Sectors: 8KB)
+	DB	0x00	; Boot Drive Number
+;----------------------------------------------------------------------------------------------------
+; Disk Address Packet (DAP)
+;----------------------------------------------------------------------------------------------------
+DAP:
+	DB	0x10	; Packet Size (16 Bytes = 0x10)
+	DB	0	; Reserved
+	DW	16	; Sectors to Load (16 Sectors = 8KB) depends on Kernel Size
 	DW	0x0000	; Destination Buffer Offset
 	DW	0x1000	; Destination Buffer Segment (0x1000:0000 = 0x10000)
-	DQ	1	; Read Start LBA (LBA 1 = Next to MBR)
-.globalDescriptorTable:
-.globalDescriptorTable_start:
-	DD	0x0, 0x0	; Null Descriptor
-.globalDescriptorTable_code:
-	DW	0xFFFF		; Code Segment (0 - 4GB)
-	DW	0x0000
-	DB	0x00
-	DB	0b10011010
-	DB	0b11001111
-	DB	0x00
-.globalDescriptorTable_data:
-	DW	0xFFFF		; Data Segment (0 - 4GB)
-	DW	0x0000
-	DB	0x00
-	DB	0b10011010
-	DB	0b11001111
-	DB	0x00
-.globalDescriptorTable_end:
+	DQ	1	; LBA Read Start (LBA 1 = Sector next to MBR)
+;----------------------------------------------------------------------------------------------------
+; Global Descriptor Table (GDT)
+;----------------------------------------------------------------------------------------------------
+GDT:
+.start:
+	; Null Descriptor
+	DD	0x00000000
+	DD	0x00000000
+.code:
+	; Code Segment Descriptor (Base Address: 0x00000000, Limit: 4GB)
+	DW	0xFFFF		; Limit [0:15]
+	DW	0x0000		; Base Address [0:15]
+	DB	0x00		; Base Address [16:23]
+	DB	0b10011010	; Access Privilege (Present=1, Ring=00, System=1, Code/Data=1, Conforming=0, Readable=1, Accessed=0)
+	DB	0b11001111	; Flag (Granularity=1, 32bit=1) & Limit [16:19]
+	DB	0x00		; Base Address [24:31]
+.data:
+	; Data Segment Descriptor (Base Address: 0x00000000, Limit: 4GB)
+	DW	0xFFFF		; Limit [0:15]
+	DW	0x0000		; Base Address [0:15]
+	DB	0x00		; Base Address [16:23]
+	DB	0b10010010	; Access Privilege (Present=1, Ring=00, System=1, Code/Data=0, Conforming=0, Readable=1, Accessed=0, Executable=0, Writable=1)
+	DB	0b11001111	; Flag (Granularity=1, 32bit=1) & Limit [16:19]
+	DB	0x00		; Base Address [24:31]
+.end:
+.descriptor:
+	; GDT Pointer Information (Size & Start Address)
+	DW	.end - .start - 1	; GDT Size - 1
+	DD	.start			; GDT Start Address
 
-.globalDescriptorTable_descriptor:
-	DW	.globalDescriptorTable_end - .globalDescriptorTable_start - 1	; Global Descriptor Table Size
-	DD	.globalDescriptorTable_start					; Global Descriptor Table Start Address
-
-CODE_SEGMENT	EQU	.globalDescriptorTable_code - .globalDescriptorTable_start
-DATA_SEGMENT	EQU	.globalDescriptorTable_data - .globalDescriptorTable_start
-
-	TIMES	0x01B8 - ($ - $$)	DB	0x00	; Padding
+; Segment Selector Constant (Byte Offset from GDT Head)
+CODE_SEGMENT	EQU	.code - .start
+DATA_SEGMENT	EQU	.data - .start
+;****************************************************************************************************
+; Padding
+;****************************************************************************************************
+	TIMES	0x01B8 - ($ - $$)	DB	0x00	; Padding 0 Until 440 Bytes (0x01B8)
+;****************************************************************************************************
+; Pattition Table (PT)
+;****************************************************************************************************
+_MBR_PT:
 ; Disk Serial Number
 	DD	0x00000000
 ; Reserved
 	DW	0x0000
 ; Partition 1
-	DB	0x80		; Active Partition Flag
+	DB	0x80		; Active Partition Flag (0x80 = Active)
 	DB	0x20		; Start Head
 	DB	0x21		; Start Sector Cylinder
 	DB	0x00		; Start Cylinder
-	DB	0x0E		; File System ID
+	DB	0x0E		; File System ID (0x0E = FAT16 LBA)
 	DB	0x15		; End Head
 	DB	0x50		; End Sector Cylinder
 	DB	0x05		; End Cylinder
-	DD	0x00000800	; First Sector
+	DD	0x00000800	; First Sector (2048th Sector)
 	DD	0x003FF800	; Total Sectors
 ; Partition 2
 	DB	0x00		; Active Partition Flag
