@@ -3,7 +3,8 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200
 
-void delay(int count);
+static inline unsigned char inb(unsigned short port);
+void wait_vsync(void);
 
 void main(void)
 {
@@ -47,12 +48,60 @@ void main(void)
 		vram[y * SCREEN_WIDTH + x]	=	dot_color;
 		
 		// Weight for Speed Adjustment
-		delay(20000);
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
+		wait_vsync();
 	}
 }
 
-void delay(int count)
+// Read 1 Byte from IO Port
+static inline unsigned char inb(unsigned short port)
 {
-	for (volatile int i = 0; i < count; i++)
+	unsigned char result;
+	
+	__asm__ volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
+	
+	return result;
+}
+
+// Wait VSYNC
+void wait_vsync(void)
+{
+	// VGA Input Status Register 1 Port: 0x03DA
+	// If Bit 3 is 1, VSYNC Interval
+	
+	// Wait VSYNC End If Already VSYNC
+	while (inb(0x03DA) & 0x08)
+	{}
+	
+	// Wait VSYNC Start
+	while (!(inb(0x03DA) & 0x08))
 	{}
 }
