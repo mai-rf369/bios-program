@@ -533,10 +533,10 @@ void delay_ms(unsigned int ms)
 // Text Renderer
 //****************************************************************************************************
 //----------------------------------------------------------------------------------------------------
-// Sub Routine (draw_char)
+// Sub Routine (draw_char8x8)
 // Draw a single 8x8 character
 //----------------------------------------------------------------------------------------------------
-void draw_char(int x, int y, char c, unsigned char color, unsigned char *vram)
+void draw_char8x8(int x, int y, char c, unsigned char color, unsigned char *vram)
 {
 	// ASCIIの表示可能文字（スペース=32 から '~'=126）以外は無視
 	if (c < 32 || c > 126) return;
@@ -574,7 +574,7 @@ void draw_string(int x, int y, const char *str, unsigned char color, unsigned ch
 	// 文字列の終端（\0）まで1文字ずつ描画
 	for (int i = 0; str[i] != '\0'; i++)
 	{
-		draw_char(current_x, y, str[i], color, vram);
+		draw_char8x8(current_x, y, str[i], color, vram);
 		current_x += 8; // 1文字描画したらX座標を8ピクセル右へ進める
 	}
 }
