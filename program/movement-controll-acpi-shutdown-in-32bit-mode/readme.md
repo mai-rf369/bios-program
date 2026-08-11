@@ -1,4 +1,4 @@
-# BIOS-PROGRAM - Movement-Controll-in-32bit-Mode
+# BIOS-PROGRAM - Movement-Controll-ACPI-Shutdown-in-32bit-Mode
 ### Compile
 ```
 $ make
