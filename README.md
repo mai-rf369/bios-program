@@ -6,3 +6,4 @@
 - [Hello-World-in-32bit-Mode](./program/hello-world-in-32bit-mode/)
 - [Bouncing-Block-in-32bit-Mode](./program/bouncing-block-in-32bit-mode/)
 - [Movement-Controll-in-32bit-Mode](./program/movement-controll-in-32bit-mode/)
+- [Movement-Controll-ACPI-Shutdown-in-32bit-Mode](./program/movement-controll-acpi-shutdown-in-32bit-mode/)
