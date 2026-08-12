@@ -20,7 +20,7 @@ void draw_char(int x, int y, char c, unsigned char color, const Font *font, unsi
 			int byte_index	=	px / 8;
 			int bit_index	=	7 - (px % 8);
 			
-			if ((glyph[py * font->bytes_per_line + byte_index] >> bit_index) && 0x01)
+			if ((glyph[py * font->bytes_per_line + byte_index] >> bit_index) & 0x01)
 			{
 				int screen_x	=	x + px;
 				int screen_y	=	y + py;
