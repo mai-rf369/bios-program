@@ -3,6 +3,7 @@
 //####################################################################################################
 #include "hardware.h"
 #include "font8x8.h"
+#include "keycode.h"
 
 //====================================================================================================
 // Define Constant
@@ -10,12 +11,6 @@
 #define VRAM 0xA0000
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 200
-// Key Scan Code
-#define KEY_ESC		0x01
-#define KEY_UP		0x48
-#define KEY_DOWN	0x50
-#define KEY_LEFT	0x4B
-#define KEY_RIGHT	0x4D
 
 //====================================================================================================
 // Declare Function
