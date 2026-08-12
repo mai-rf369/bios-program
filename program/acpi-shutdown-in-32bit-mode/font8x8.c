@@ -53,10 +53,10 @@ static const unsigned char font8x8_data[95][8] = {
 	{0x3B,0x6E,0x00,0x00,0x00,0x00,0x00,0x00}
 };
 
-const Font font_8x8	=	{
-	.data	=	(const unsigned char *)font8x8_data,
-	.width	=	8,
-	.height	=	8,
+const Font font8x8	=	{
+	.data		=	(const unsigned char *)font8x8_data,
+	.width		=	8,
+	.height		=	8,
 	.bytes_per_line	=	1,
 	.first_char	=	32,
 	.last_char	=	126
