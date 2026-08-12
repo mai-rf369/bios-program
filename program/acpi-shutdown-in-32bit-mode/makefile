@@ -20,7 +20,7 @@ kernel_entry.o: kernel_entry.asm
 	$(ASM_COMPILER) -f elf32 kernel_entry.asm -o kernel_entry.o
 %.o: %.c
 	$(C_COMPILER) $(C_FLAGS) -c $< -o $@
-kernel.bin: kernel_entry.o kernel.o linker.ld
+kernel.bin: kernel_entry.o $(C_OBJECTS) linker.ld
 	$(LINKER) $(LINKER_FLAGS) kernel_entry.o $(C_OBJECTS) -o kernel.elf
 	objcopy -O binary kernel.elf kernel.bin
 program.img: bootloader.bin kernel.bin
