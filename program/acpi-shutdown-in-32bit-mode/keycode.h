@@ -40,5 +40,5 @@
 #define KEY_T		0x14
 #define KEY_Y		0x15
 #define KEY_U		0x16
-#define KEY_T		0x17
+#define KEY_I		0x17
 #endif
