@@ -3,14 +3,9 @@
 //####################################################################################################
 #include "hardware.h"
 #include "font8x8.h"
+#include "timer.h"
+#include "graphic.h"
 #include "keycode.h"
-
-//====================================================================================================
-// Define Constant
-//====================================================================================================
-#define VRAM 0xA0000
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 200
 
 //====================================================================================================
 // Declare Function
@@ -83,7 +78,7 @@ void main(void)
 			system_shutdown();
 		}
 		
-		draw_string(4, 4, "ESC: Shutdown", 15, vram);
+		draw_string(4, 4, "ESC: Shutdown", 15, &font8x8, vram);
 		
 		delay_ms(16);
 	}
@@ -239,101 +234,5 @@ void system_shutdown(void)
 	while (1)
 	{
 		__asm__ volatile ("cli; hlt");
-	}
-}
-//----------------------------------------------------------------------------------------------------
-// Sub Routine (read_pit)
-// Read Current PIT Channel 0 Count
-//----------------------------------------------------------------------------------------------------
-unsigned short read_pit(void)
-{
-	unsigned short count;
-	
-	// Send Latch Command (0x00) to PIT Command Port (0x43)
-	outb(0x43, 0x00);
-	
-	count	=	inb(0x40);			// Read Low Byte
-	count	=	count | (inb(0x40) << 8);	// Read High Byte
-	
-	return count;
-}
-//----------------------------------------------------------------------------------------------------
-// Sub Routine (delay_ms)
-// Wait for specified MilliSeconds
-//----------------------------------------------------------------------------------------------------
-void delay_ms(unsigned int ms)
-{
-	// PIT runs exactly at 1,193,182Hz. (1ms = 1,193 ticks)
-	unsigned int target_ticks	=	ms * 1193;
-	unsigned int elapsed_ticks	=	0;
-	
-	unsigned short current_tick	=	read_pit();
-	unsigned short prev_tick	=	current_tick;
-	
-	while (elapsed_ticks < target_ticks)
-	{
-		current_tick	=	read_pit();
-		
-		// PIT is a Decrementing Counter
-		if (prev_tick >= current_tick)
-		{
-			elapsed_ticks	=	elapsed_ticks + (prev_tick - current_tick);
-		}
-		else
-		{
-			elapsed_ticks	=	elapsed_ticks + (prev_tick + (65536 - current_tick));
-		}
-		
-		prev_tick	=	current_tick;
-	}
-}
-
-//****************************************************************************************************
-// Text Renderer
-//****************************************************************************************************
-//----------------------------------------------------------------------------------------------------
-// Sub Routine (draw_char8x8)
-// Draw a single 8x8 character
-//----------------------------------------------------------------------------------------------------
-void draw_char8x8(int x, int y, char c, unsigned char color, unsigned char *vram)
-{
-	// ASCIIの表示可能文字（スペース=32 から '~'=126）以外は無視
-	if (c < 32 || c > 126) return;
-
-	const unsigned char *glyph = font8x8[c - 32];
-
-	for (int py = 0; py < 8; py++)
-	{
-		for (int px = 0; px < 8; px++)
-		{
-			// ビットが立っている（1である）ドットだけを描画
-			if ((glyph[py] >> (7 - px)) & 0x01)
-			{
-				int screen_x = x + px;
-				int screen_y = y + py;
-				
-				// 画面外にはみ出さないかチェック
-				if (screen_x >= 0 && screen_x < SCREEN_WIDTH && screen_y >= 0 && screen_y < SCREEN_HEIGHT)
-				{
-					vram[screen_y * SCREEN_WIDTH + screen_x] = color;
-				}
-			}
-		}
-	}
-}
-
-//----------------------------------------------------------------------------------------------------
-// Sub Routine (draw_string)
-// Draw a null-terminated string
-//----------------------------------------------------------------------------------------------------
-void draw_string(int x, int y, const char *str, unsigned char color, unsigned char *vram)
-{
-	int current_x = x;
-	
-	// 文字列の終端（\0）まで1文字ずつ描画
-	for (int i = 0; str[i] != '\0'; i++)
-	{
-		draw_char8x8(current_x, y, str[i], color, vram);
-		current_x += 8; // 1文字描画したらX座標を8ピクセル右へ進める
 	}
 }
