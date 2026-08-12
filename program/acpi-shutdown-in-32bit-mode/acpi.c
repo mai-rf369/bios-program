@@ -2,7 +2,7 @@
 #include "hardware.h"
 #include "timer.h"
 
-static int acpi_strncmp(const char *str, const char *str2, int n)
+static int acpi_strncmp(const char *str1, const char *str2, int n)
 {
 	for (int i = 0; i < n; i++)
 	{
