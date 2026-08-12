@@ -9,3 +9,4 @@
 - [Movement-Controll-ACPI-Shutdown-in-32bit-Mode](./program/movement-controll-acpi-shutdown-in-32bit-mode/)
 - [ACPI-Shutdown-in-32bit-Mode](./program/acpi-shutdown-in-32bit-mode/)
 - [Mouse-Keyboard-Control-in-32bit-Mode](./program/mouse-keyboard-control-in-32bit-mode/)
+- [Keyboard-Control-in-32bit-Mode](./program/keyboard-control-in-32bit-mode/)
