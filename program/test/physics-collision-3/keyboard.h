@@ -1,6 +1,11 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-void process_keyboard(int *key_state);
+typedef struct {
+	int keys[128];
+} KeyboardState;
+
+void initialize_keyboard(KeyboardState *keyboard);
+void process_keyboard(KeyboardState *keyboard);
 
 #endif

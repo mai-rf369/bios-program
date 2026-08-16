@@ -1,7 +1,15 @@
 #include "keyboard.h"
 #include "hardware.h"
 
-void process_keyboard(int *key_state)
+void initialize_keyboard(KeyboardState *keyboard)
+{
+	for (int i = 0; i < 128; i++)
+	{
+		keyboard->keys[i]	=	0;
+	}
+}
+
+void process_keyboard(KeyboardState *keyboard)
 {
 	// Read Status Register in Keyboard Controller
 	while (inb(0x64) & 0x01 && !(inb(0x64) & 0x20))
@@ -18,12 +26,12 @@ void process_keyboard(int *key_state)
 		if (scan & 0x80)
 		{
 			// Release
-			key_state[scan & 0x7F]	=	0;
+			keyboard->keys[scan & 0x7F]	=	0;
 		}
 		else
 		{
 			// Press
-			key_state[scan]		=	1;
+			keyboard->keys[scan]		=	1;
 		}
 	}
 }

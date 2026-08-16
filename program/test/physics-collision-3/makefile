@@ -6,7 +6,7 @@
 #====================================================================================================
 C_COMPILER = gcc
 C_FLAGS = -m32 -ffreestanding -fno-pie -fno-stack-protector -nostdlib -Wall -Wextra
-C_OBJECTS = kernel.o font8x8.o timer.o graphic.o acpi.o keyboard.o mouse.o
+C_OBJECTS = kernel.o font8x8.o timer.o graphic.o acpi.o keyboard.o mouse.o sprite.o map.o
 ASM_COMPILER = nasm
 LINKER = ld
 LINKER_FLAGS = -m elf_i386 -T linker.ld --nmagic
