@@ -1,0 +1,22 @@
+Sprite
+	ただのスプライトデータ
+	背景描画や動的オブジェクトに使われる
+#define ENTITY_BULLET	2
+#define ENTITY_PLAYER	1
+#define ENTITY_BALL	3
+#define ENTITY_APPLE	4
+#define ENTITY_SPIKE_UP	5
+#define ENTITY_SPIKE_DOWN	6
+#define ENTITY_SPIKE_LEFT	7
+#define ENTITY_SPIKE_RIGHT	8
+DynamicObject(Entity)
+	スプライトデータ
+	entity_type
+	x
+	y
+	dx
+	dy
+	など
+衝突判定(ブロードフェーズ+ナローフェーズ+連続衝突検知)ピクセルパーフェクト
+	
+
