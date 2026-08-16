@@ -4,6 +4,7 @@
 typedef struct {
 	int width;
 	int height;
+	const unsigned char *overwrites;
 	const unsigned char *pixels;
 	const unsigned char *collisions;
 } Sprite;
